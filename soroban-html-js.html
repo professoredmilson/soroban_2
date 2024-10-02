@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo Soroban</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .soroban {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 5px;
+        }
+        .bead {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin: 2px 0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .bead.upper {
+            background-color: #8B4513;
+        }
+        .bead.lower {
+            background-color: #FFA500;
+        }
+        .bead.inactive {
+            background-color: #D3D3D3;
+        }
+        .separator {
+            width: 40px;
+            height: 2px;
+            background-color: black;
+            margin: 5px 0;
+        }
+        .buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        button {
+            margin: 0 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        #result {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        #message {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        #checkResult {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="soroban" id="soroban"></div>
+        <div id="result">0</div>
+        <div class="buttons">
+            <button onclick="handleModeChange('practice')">Treinar</button>
+            <button onclick="handleModeChange('add')">Somar</button>
+            <button onclick="handleCheck()" id="checkButton" style="display: none;">Conferir</button>
+        </div>
+        <div id="difficultyButtons" style="display: none;">
+            <button onclick="handleDifficultySelect('easy')">Fácil</button>
+            <button onclick="handleDifficultySelect('medium')">Médio</button>
+            <button onclick="handleDifficultySelect('hard')">Difícil</button>
+        </div>
+        <div id="message"></div>
+        <div id="checkResult"></div>
+    </div>
+
+    <script>
+        let columns = [0, 0, 0, 0, 0];
+        let target = 0;
+        let secondNumber = 0;
+        let mode = 'practice';
+        let difficulty = null;
+
+        function createSoroban() {
+            const soroban = document.getElementById('soroban');
+            soroban.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const column = document.createElement('div');
+                column.className = 'column';
+                
+                const upperBead = createBead(true, i);
+                column.appendChild(upperBead);
+                
+                const separator = document.createElement('div');
+                separator.className = 'separator';
+                column.appendChild(separator);
+                
+                for (let j = 0; j < 4; j++) {
+                    const lowerBead = createBead(false, i);
+                    column.appendChild(lowerBead);
+                }
+                
+                soroban.appendChild(column);
+            }
+            updateSoroban();
+        }
+
+        function createBead(isUpper, columnIndex) {
+            const bead = document.createElement('div');
+            bead.className = `bead ${isUpper ? 'upper' : 'lower'} inactive`;
+            bead.onclick = () => handleBeadClick(columnIndex, isUpper);
+            return bead;
+        }
+
+        function handleBeadClick(columnIndex, isUpper) {
+            if (isUpper) {
+                columns[columnIndex] = columns[columnIndex] >= 5 ? columns[columnIndex] - 5 : columns[columnIndex] + 5;
+            } else {
+                const lowerBeads = columns[columnIndex] % 5;
+                if (lowerBeads === 4) {
+                    columns[columnIndex] -= 4;
+                } else {
+                    columns[columnIndex] += 1;
+                }
+            }
+            updateSoroban();
+        }
+
+        function updateSoroban() {
+            const soroban = document.getElementById('soroban');
+            columns.forEach((value, columnIndex) => {
+                const column = soroban.children[columnIndex];
+                const upperBead = column.children[0];
+                upperBead.className = `bead upper ${value >= 5 ? '' : 'inactive'}`;
+                
+                const lowerBeads = column.children;
+                for (let i = 2; i < 6; i++) {
+                    lowerBeads[i].className = `bead lower ${(value % 5) >= (i - 1) ? '' : 'inactive'}`;
+                }
+            });
+            document.getElementById('result').textContent = getCurrentValue();
+        }
+
+        function getCurrentValue() {
+            return columns.reduce((sum, col, index) => sum + col * Math.pow(10, 4 - index), 0);
+        }
+
+        function generateRandomNumber(max) {
+            return Math.floor(Math.random() * max);
+        }
+
+        function handleModeChange(newMode) {
+            mode = newMode;
+            columns = [0, 0, 0, 0, 0];
+            difficulty = null;
+            document.getElementById('checkResult').textContent = '';
+            document.getElementById('checkButton').style.display = 'none';
+            document.getElementById('difficultyButtons').style.display = newMode === 'add' ? 'block' : 'none';
+            
+            if (newMode === 'practice') {
+                target = generateRandomNumber(100000);
+                document.getElementById('message').textContent = `Número para representar: ${target}`;
+                document.getElementById('checkButton').style.display = 'inline-block';
+            } else {
+                document.getElementById('message').textContent = '';
+            }
+            updateSoroban();
+        }
+
+        function handleDifficultySelect(level) {
+            difficulty = level;
+            let max;
+            switch (level) {
+                case 'easy': max = 100; break;
+                case 'medium': max = 1000; break;
+                case 'hard': max = 10000; break;
+                default: max = 100;
+            }
+            target = generateRandomNumber(max);
+            secondNumber = generateRandomNumber(max);
+            document.getElementById('message').textContent = `Some: ${target} + ${secondNumber}`;
+            document.getElementById('checkButton').style.display = 'inline-block';
+            document.getElementById('difficultyButtons').style.display = 'none';
+        }
+
+        function handleCheck() {
+            const currentValue = getCurrentValue();
+            const expectedValue = mode === 'add' ? target + secondNumber : target;
+            const isCorrect = currentValue === expectedValue;
+            const checkResult = document.getElementById('checkResult');
+            checkResult.textContent = isCorrect ? "Correto!" : `Incorreto. A resposta correta é ${expectedValue}.`;
+            checkResult.style.color = isCorrect ? 'green' : 'red';
+        }
+
+        createSoroban();
+    </script>
+</body>
+</html>
