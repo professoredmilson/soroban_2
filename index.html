@@ -236,8 +236,8 @@
             const isCorrect = currentValue === expectedValue;
             
             document.getElementById('result').textContent = isCorrect ? 
-                "Correto! Sua representação está correta." : 
-                `Incorreto. A resposta correta é ${expectedValue}.`;
+                "Correto!" : 
+                `Se enganou! Tente novamente.`;
         }
 
         function resetSoroban() {
